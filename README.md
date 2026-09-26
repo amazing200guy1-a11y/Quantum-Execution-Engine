@@ -16,34 +16,17 @@ Each boundary is deliberately chosen for its strengths: TypeScript for the cockp
 ---
 
 ## Multi-Language Data Pipeline
-┌────────────────────────────────────────────────────────────────────────┐
-│                      WEB COCKPIT & UI INTERFACE                        │
-│  Next.js 14 / TypeScript / HTML5 / Tailwind CSS Engine                 │
-└───────────────────────────────────┬────────────────────────────────────┘
-│ (Secure API Call via WebSockets)
-▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                      FASTAPI SIGNAL COLLECTOR (Python 3.12)            │
-│  Validates incoming token streams; Pipes clean data to memory bridge   │
-└───────────────────────────────────┬────────────────────────────────────┘
-│ (Zero-Copy Inter-Process handoff)
-▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                  LOW-LATENCY RUST EXECUTION ROUTER (Go/Rust Engine)     │
-│  Asynchronous task pools; Async lock-free order-routing mechanics      │
-└───────────────────────────────────┬────────────────────────────────────┘
-│ (SIMD Direct Pointer Access)
-▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                  GOVERNOR RISK QUANT CORE (Compiled C++20)             │
-│  SIMD-accelerated mathematical vector drawdown check (<0.01ms boundary)│
-└───────────────────────────────────┬────────────────────────────────────┘
-│ (IPC Pipe Execution)
-▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                  FIX PROTOCOL ENGINE ADAPTER (Java 17 Core)            │
-│  Serializes binary trade blocks directly to Tier-1 Liquidity Pools      │
-└────────────────────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart TD
+    UI["🖥️ Operator Cockpit (Next.js 14 / TypeScript)"] -->|WebSocket Telemetry| COLLECTOR["📡 Signal Collector (FastAPI Python 3.12)"]
+    COLLECTOR -->|Zero-Copy Shared Memory| ROUTER["⚡ Lock-Free Order Router (Rust 2021)"]
+    ROUTER -->|SIMD Vector Pointers| KERNEL["🛡️ Pre-Trade Risk Governor (Compiled C++20 SIMD)"]
+    KERNEL -->|Decision: APPROVED| FIX["🔌 FIX Protocol Adapter (Java 17 Core)"]
+    KERNEL -->|Decision: REJECTED| DROP["🚫 Circuit Breaker Tripped // Order Aborted"]
+    FIX --> POOL["🏦 Institutional Tier-1 Liquidity Pool"]
+```
+
 
 ---
 
