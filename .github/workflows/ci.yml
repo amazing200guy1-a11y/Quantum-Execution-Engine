@@ -1,37 +1,55 @@
-name: CI
+name: CI — Build, Test & Benchmark
 
 on:
   push:
-    branches: ["main", "master"]
+    branches: [main, master]
   pull_request:
-    branches: ["main", "master"]
+    branches: [main, master]
 
 jobs:
-  python:
+  # ── C++20 Risk Kernel: compile → unit tests → benchmark ─────────────────────
+  cpp-risk-kernel:
+    name: C++20 Risk Kernel (GCC 13, Release + AVX2)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: pip install fastapi httpx pytest 2>/dev/null || true
-      - run: python -m pytest --tb=short 2>/dev/null || echo "Tests passed"
 
-  node:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - run: echo "Node layer verified"
+      - name: Install GCC 13 & CMake
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y gcc-13 g++-13 cmake ninja-build
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-13 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100
 
-  java:
+      - name: Configure (Release -O3 -march=native -mavx2)
+        run: cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=g++-13
+
+      - name: Build risk_kernel static library, test binary, and bench binary
+        run: cmake --build build --parallel
+
+      - name: ✅ Run unit test suite
+        run: ./build/test_risk
+
+      - name: 📊 Run latency benchmark (10M evaluations)
+        run: ./build/bench_risk
+
+  # ── Rust 2021 Order Router: fmt → clippy → tests ─────────────────────────────
+  rust-order-router:
+    name: Rust 2021 Order Router (stable)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+
+      - name: Install Rust stable toolchain
+        uses: dtolnay/rust-toolchain@stable
         with:
-          distribution: "temurin"
-          java-version: "17"
-      - run: echo "Java layer verified"
+          components: rustfmt, clippy
+
+      - name: cargo fmt --check
+        run: cargo fmt --check
+
+      - name: cargo clippy -D warnings
+        run: cargo clippy -- -D warnings
+
+      - name: cargo test --release
+        run: cargo test --release
